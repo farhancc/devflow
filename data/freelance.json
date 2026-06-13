@@ -1,0 +1,153 @@
+{
+  "clients": [
+    {
+      "id": "client-91qsrfw",
+      "user_id": "user-manager-id-111",
+      "name": "Sarah Connor",
+      "email": "sarah@skynet.io",
+      "phone": "+1 (555) 123-4567",
+      "company": "Skynet Solutions",
+      "created_at": "2026-05-14T01:51:37.129Z"
+    },
+    {
+      "id": "client-o1ppgy6",
+      "user_id": "user-manager-id-111",
+      "name": "Bruce Wayne",
+      "email": "bruce@waynecorp.com",
+      "phone": "+1 (555) 999-1111",
+      "company": "Wayne Enterprises",
+      "created_at": "2026-05-19T01:51:37.129Z"
+    },
+    {
+      "id": "client-h9eofyk",
+      "user_id": "user-manager-id-111",
+      "name": "Tony Stark",
+      "email": "tony@starkindustries.com",
+      "phone": "+1 (555) 300-3000",
+      "company": "Stark Industries",
+      "created_at": "2026-05-29T01:51:37.129Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj-xyjugoq",
+      "user_id": "user-manager-id-111",
+      "title": "Mobile App Redesign",
+      "description": "Complete overhaul of the mobile onboarding, dashboard, and billing flows. Building a unified Design System.",
+      "status": "in_progress",
+      "deadline": "2026-06-17",
+      "client_id": "client-o1ppgy6",
+      "category": "UI/UX Design",
+      "amount": 6500,
+      "preview_images": [],
+      "slug": "mobile-app-redesign",
+      "is_featured": true,
+      "created_at": "2026-05-29T01:51:37.129Z"
+    },
+    {
+      "id": "proj-2pvre9u",
+      "user_id": "user-manager-id-111",
+      "title": "E-commerce Website Design",
+      "description": "High-converting design for a premium sustainable clothing startup. Built with responsive layout.",
+      "status": "revision",
+      "deadline": "2026-07-01",
+      "client_id": "client-h9eofyk",
+      "category": "Web Design",
+      "amount": 4800,
+      "preview_images": [],
+      "slug": "ecommerce-clothing",
+      "is_featured": true,
+      "created_at": "2026-06-03T01:51:37.129Z"
+    },
+    {
+      "id": "proj-tfb8gsj",
+      "user_id": "user-manager-id-111",
+      "title": "Skynet Logo & Identity",
+      "description": "Brand identity, visual guidelines, typography selection, and color palette creation.",
+      "status": "completed",
+      "deadline": "2026-06-11",
+      "completed_date": "2026-06-10",
+      "client_id": "client-91qsrfw",
+      "category": "Branding",
+      "amount": 3500,
+      "preview_images": [],
+      "slug": "skynet-identity",
+      "is_featured": false,
+      "created_at": "2026-05-24T01:51:37.129Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-k8hzlvo",
+      "user_id": "user-manager-id-111",
+      "amount": 3500,
+      "payment_date": "2026-06-08",
+      "project_id": "proj-tfb8gsj",
+      "client_id": "client-91qsrfw",
+      "status": "paid",
+      "notes": "Initial milestone payment (50%)",
+      "created_at": "2026-06-08T01:51:37.129Z"
+    },
+    {
+      "id": "pay-3cfz5b4",
+      "user_id": "user-manager-id-111",
+      "amount": 1500,
+      "payment_date": "2026-06-12",
+      "project_id": "proj-xyjugoq",
+      "client_id": "client-o1ppgy6",
+      "status": "paid",
+      "notes": "Setup deposit",
+      "created_at": "2026-06-12T01:51:37.129Z"
+    }
+  ],
+  "expenses": [
+    {
+      "id": "exp-09kg3tb",
+      "user_id": "user-manager-id-111",
+      "amount": 290,
+      "expense_date": "2026-06-01",
+      "category": "Software Subscriptions",
+      "description": "Figma Organization license annual renewal portion",
+      "created_at": "2026-06-13T01:51:37.130Z"
+    },
+    {
+      "id": "exp-ldhfofc",
+      "user_id": "user-manager-id-111",
+      "amount": 120,
+      "expense_date": "2026-06-05",
+      "category": "Web Hosting",
+      "description": "Vercel Team plan & domain renewals",
+      "created_at": "2026-06-13T01:51:37.130Z"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-xb60hqy",
+      "user_id": "user-manager-id-111",
+      "target_value": 8000,
+      "target_type": "income",
+      "month": 6,
+      "year": 2026,
+      "created_at": "2026-06-13T01:51:37.129Z"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "user-manager-id-111",
+      "full_name": "Freelancer User",
+      "tagline": "Senior UI/UX Designer & Brand Strategist",
+      "bio": "Crafting premium digital experiences for forward-thinking startups and brands. Specializing in design systems, Webflow, and product strategy.",
+      "years_experience": 6,
+      "email": "manager-id-111@designflow.com",
+      "phone": "+1 (555) 234-5678",
+      "whatsapp": "+1 (555) 234-5678",
+      "social_links": {
+        "instagram": "https://instagram.com",
+        "linkedin": "https://linkedin.com",
+        "twitter": "https://twitter.com",
+        "behance": "https://behance.net",
+        "dribbble": "https://dribbble.com"
+      }
+    }
+  ]
+}

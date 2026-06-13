@@ -1,0 +1,35 @@
+[
+  {
+    "id": "user-manager-id-111",
+    "username": "manager",
+    "passwordHash": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c",
+    "role": "manager",
+    "fullName": "Creative Manager",
+    "createdAt": "2026-06-13T03:42:17.761Z",
+    "phone": "+1 888 888 8888",
+    "email": "manager@designflow.com",
+    "address": "123 Design Blvd"
+  },
+  {
+    "id": "user-753q87j41",
+    "username": "testemployee",
+    "passwordHash": "b55c8792d1ce458e279308835f8a97b580263503e76e1998e279703e35ad0c2e",
+    "role": "designer",
+    "fullName": "Updated Test Employee",
+    "createdAt": "2026-06-13T04:20:41.898Z",
+    "phone": "+1 999 999 9999",
+    "email": "employee@designflow.com",
+    "address": "456 Studio St"
+  },
+  {
+    "id": "user-z0r1uohju",
+    "username": "faru",
+    "passwordHash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "role": "designer",
+    "fullName": "farshid",
+    "createdAt": "2026-06-13T04:50:56.890Z",
+    "phone": "9961157999",
+    "email": "",
+    "address": ""
+  }
+]
