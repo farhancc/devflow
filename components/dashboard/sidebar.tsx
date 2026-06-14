@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { 
   LayoutDashboard, 
@@ -74,10 +75,16 @@ function NavContent({ role, notificationCount }: DashboardSidebarProps) {
     <div className="flex flex-col h-full">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <div className="p-1.5 rounded-md bg-primary">
-            <Palette className="h-4 w-4 text-primary-foreground" />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <Image
+              src="/bdesign_logo.png"
+              alt="BDESIGN Logo"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
           </div>
-          <span>DesignFlow</span>
+          <span>BDESIGN</span>
         </Link>
       </div>
       

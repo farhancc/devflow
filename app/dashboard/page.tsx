@@ -4,10 +4,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import Link from 'next/link'
-import { 
-  DollarSign, 
-  FolderKanban, 
-  Users, 
+import {
+  DollarSign,
+  FolderKanban,
+  Users,
   TrendingUp,
   ArrowRight,
   Clock,
@@ -19,12 +19,12 @@ import {
   Briefcase,
   BarChart3
 } from 'lucide-react'
-import { 
-  getLocalProjects, 
-  getLocalClients, 
-  getLocalPayments, 
-  getLocalExpenses, 
-  getLocalGoals 
+import {
+  getLocalProjects,
+  getLocalClients,
+  getLocalPayments,
+  getLocalExpenses,
+  getLocalGoals
 } from '@/lib/local-db'
 import { getTeamOverview } from '@/app/dashboard/settings/actions'
 
@@ -43,10 +43,10 @@ export default async function DashboardPage() {
 
   // Per-user data
   const projects = await getLocalProjects(user.id)
-  const clients  = await getLocalClients(user.id)
+  const clients = await getLocalClients(user.id)
   const payments = await getLocalPayments(user.id)
   const expenses = await getLocalExpenses(user.id)
-  const goals    = await getLocalGoals(user.id)
+  const goals = await getLocalGoals(user.id)
 
   const activeProjectsList = projects.filter(p =>
     ['in_progress', 'revision', 'inquiry'].includes(p.status)
@@ -57,20 +57,20 @@ export default async function DashboardPage() {
   startOfMonth.setHours(0, 0, 0, 0)
   const startOfMonthStr = startOfMonth.toISOString().split('T')[0]
 
-  const monthlyIncome       = payments.filter(p => p.payment_date >= startOfMonthStr).reduce((s, p) => s + p.amount, 0)
+  const monthlyIncome = payments.filter(p => p.payment_date >= startOfMonthStr).reduce((s, p) => s + p.amount, 0)
   const monthlyExpenseTotal = expenses.filter(e => e.expense_date >= startOfMonthStr).reduce((s, e) => s + e.amount, 0)
 
-  const currentGoal  = goals.find(g => g.month === startOfMonth.getMonth() + 1 && g.year === startOfMonth.getFullYear())
+  const currentGoal = goals.find(g => g.month === startOfMonth.getMonth() + 1 && g.year === startOfMonth.getFullYear())
   const goalProgress = currentGoal ? Math.min((monthlyIncome / currentGoal.target_value) * 100, 100) : 0
 
   const sevenDaysStr = new Date(Date.now() + 7 * 864e5).toISOString().split('T')[0]
-  const todayStr     = new Date().toISOString().split('T')[0]
+  const todayStr = new Date().toISOString().split('T')[0]
   const urgentProjects = projects
     .filter(p => ['in_progress', 'revision'].includes(p.status) && p.deadline <= sevenDaysStr && p.deadline >= todayStr)
     .sort((a, b) => a.deadline.localeCompare(b.deadline))
     .slice(0, 3)
 
-  const isManager    = user.role === 'manager'
+  const isManager = user.role === 'manager'
   const teamOverview = isManager ? await getTeamOverview() : null
 
   return (
@@ -84,10 +84,7 @@ export default async function DashboardPage() {
             Role: <span className="capitalize font-semibold text-primary">{user.role}</span> &bull; Here's what's happening with your workspace.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold self-start md:self-auto">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Role-Based Access Active</span>
-        </div>
+
       </div>
 
       {/* ── Personal KPI Cards ── */}

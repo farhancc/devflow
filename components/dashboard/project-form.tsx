@@ -26,6 +26,7 @@ interface ProjectFormProps {
     client_id: string | null; assigned_to?: string | null; amount: number
     advance_payment: number; deadline: string | null; priority: string
     status: string; is_featured: boolean
+    preview_images?: string[]
   }
 }
 
@@ -140,6 +141,18 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" name="description" defaultValue={project?.description || ''} placeholder="Describe the project requirements..." rows={4} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image_url">Image URL</Label>
+            <Input 
+              id="image_url" 
+              name="image_url" 
+              type="url" 
+              defaultValue={project?.preview_images?.[0] || ''} 
+              placeholder="e.g., https://images.unsplash.com/photo-..." 
+            />
+            <p className="text-xs text-muted-foreground">Provide a direct link to the image for this project to showcase in the public portfolio. Only image URLs are supported; no file uploads.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

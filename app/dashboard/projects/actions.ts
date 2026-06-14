@@ -18,6 +18,7 @@ export async function createProject(formData: FormData) {
   const deadline     = formData.get('deadline') as string
   const priority     = formData.get('priority') as string || 'medium'
   const status       = formData.get('status') as string || 'inquiry'
+  const imageUrl     = formData.get('image_url') as string
 
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
@@ -35,12 +36,13 @@ export async function createProject(formData: FormData) {
     deadline: deadline || null,
     priority, status, slug,
     is_featured: false,
-    preview_images: [],
+    preview_images: imageUrl ? [imageUrl] : [],
     created_at: new Date().toISOString()
   }
 
   await db.collection('projects').insertOne(newProject)
   revalidatePath('/dashboard/projects')
+  revalidatePath('/')
   
   // Extract _id so it does not cause serialization issues
   const { _id, ...plainProject } = newProject as any
@@ -62,6 +64,7 @@ export async function updateProject(id: string, formData: FormData) {
   const priority     = formData.get('priority') as string
   const status       = formData.get('status') as string
   const isFeatured   = formData.get('is_featured') === 'true'
+  const imageUrl     = formData.get('image_url') as string
 
   const client = await clientPromise
   const db = client.db()
@@ -78,6 +81,7 @@ export async function updateProject(id: string, formData: FormData) {
         deadline: deadline || null,
         priority, status,
         is_featured: isFeatured,
+        preview_images: imageUrl ? [imageUrl] : [],
         updated_at: new Date().toISOString(),
       }
     }
@@ -85,6 +89,7 @@ export async function updateProject(id: string, formData: FormData) {
 
   revalidatePath('/dashboard/projects')
   revalidatePath(`/dashboard/projects/${id}`)
+  revalidatePath('/')
   return { success: true }
 }
 

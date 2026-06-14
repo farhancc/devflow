@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Palette, Mail, ArrowLeft } from 'lucide-react'
@@ -8,11 +9,24 @@ export default function SignUpSuccessPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold">
-            <div className="p-2 rounded-lg bg-primary">
-              <Palette className="h-6 w-6 text-primary-foreground" />
+          <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold no-underline text-foreground">
+            <div className="w-10 h-10 flex items-center justify-center">
+              <Image
+                src="/bdesign_logo.png"
+                alt="BDESIGN Logo"
+                width={36}
+                height={36}
+                className="object-contain"
+              />
             </div>
-            <span>DesignFlow</span>
+            <div className="flex flex-col">
+              <span className="font-[var(--font-display)] font-extrabold text-lg tracking-tight block leading-none">
+                BDESIGN
+              </span>
+              <span className="mono text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mt-0.5 font-normal">
+                Creative Studio
+              </span>
+            </div>
           </Link>
         </div>
         

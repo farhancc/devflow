@@ -8,25 +8,12 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'DesignFlow - Freelance Designer Portfolio & Business Manager',
-  description: 'Manage your freelance design business with ease. Track projects, clients, payments, and showcase your portfolio.',
+  title: 'BDESIGN - Creative Studio & Portfolio Manager',
+  description: 'Premium brand identities, offset print layouts, hardcover binding packages, and recognition award trophies in Malappuram.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/bdesign_logo.png',
+    apple: '/bdesign_logo.png',
   },
 }
 

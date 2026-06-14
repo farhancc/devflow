@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Star, ExternalLink, Eye, EyeOff } from 'lucide-react'
 
 import { getProjectCategories } from '@/app/dashboard/projects/actions'
+import { TestimonialsCms } from '@/components/dashboard/testimonials-cms'
+import { ServicesCms } from '@/components/dashboard/services-cms'
 
 export default async function CmsPage() {
   const user = await getCurrentUser()
@@ -29,12 +31,24 @@ export default async function CmsPage() {
   const featured = projects.filter(p => p.is_featured)
   const notFeatured = projects.filter(p => !p.is_featured)
 
+  // Fetch testimonials scoped to this user
+  const testimonials = await db.collection('testimonials')
+    .find({ user_id: user.id })
+    .sort({ created_at: -1 })
+    .toArray()
+
+  // Fetch services scoped to this user
+  const services = await db.collection('services')
+    .find({ user_id: user.id })
+    .sort({ created_at: -1 })
+    .toArray()
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Portfolio CMS</h2>
-          <p className="text-muted-foreground">Manage which completed projects appear on your public portfolio</p>
+          <h2 className="text-2xl font-bold tracking-tight">Website CMS</h2>
+          <p className="text-muted-foreground">Manage your completed projects, testimonials, and service offerings displayed on your public portfolio</p>
         </div>
         <Button variant="outline" asChild>
           <Link href="/" target="_blank">
@@ -44,7 +58,7 @@ export default async function CmsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-4">
         <Card>
           <CardContent className="pt-4">
             <p className="text-2xl font-bold">{projects.length || 0}</p>
@@ -54,13 +68,19 @@ export default async function CmsPage() {
         <Card>
           <CardContent className="pt-4">
             <p className="text-2xl font-bold text-yellow-600">{featured.length}</p>
-            <p className="text-xs text-muted-foreground">Featured</p>
+            <p className="text-xs text-muted-foreground">Featured Projects</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-muted-foreground">{notFeatured.length}</p>
-            <p className="text-xs text-muted-foreground">Hidden</p>
+            <p className="text-2xl font-bold text-purple-600">{testimonials.length || 0}</p>
+            <p className="text-xs text-muted-foreground">Client Testimonials</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-2xl font-bold text-blue-600">{services.length || 0}</p>
+            <p className="text-xs text-muted-foreground">Services Offered</p>
           </CardContent>
         </Card>
       </div>
@@ -127,6 +147,10 @@ export default async function CmsPage() {
           )}
         </CardContent>
       </Card>
+
+      <ServicesCms services={services as any[]} />
+
+      <TestimonialsCms testimonials={testimonials as any[]} />
     </div>
   )
 }

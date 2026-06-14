@@ -1,78 +1,114 @@
+import type { Metadata } from 'next'
 import { getCurrentUser } from '@/lib/auth'
+import { BDesignHomeClient } from '@/components/portfolio/bdesign-home-client'
 import clientPromise from '@/lib/mongodb'
-import { Navbar } from '@/components/portfolio/navbar'
-import { HeroSection } from '@/components/portfolio/hero-section'
-import { ProjectsGallery } from '@/components/portfolio/projects-gallery'
-import { ServicesSection } from '@/components/portfolio/services-section'
-import { TestimonialsSection } from '@/components/portfolio/testimonials-section'
-import { ContactSection } from '@/components/portfolio/contact-section'
-import { Footer } from '@/components/portfolio/footer'
+
+export const metadata: Metadata = {
+  title: 'BDESIGN | Graphic Designer in Chemmad, Kerala',
+  description: 'Premium graphic design studio in Chemmad, Kerala. Specialized in corporate branding, logo design, product packaging, and marketing collaterals. Located at BOOK PLUS, Hidaya Nagar, Chemmad.',
+  keywords: [
+    'BDESIGN',
+    'BDESIGN Chemmad',
+    'Graphic Designer Chemmad',
+    'Graphic Designer Kerala',
+    'Logo Design Chemmad',
+    'Branding Studio Kerala',
+    'Packaging Designer Malappuram',
+    'Book Plus Chemmad'
+  ],
+  openGraph: {
+    title: 'BDESIGN | Graphic Designer in Chemmad, Kerala',
+    description: 'Premium branding and graphic design studio. Specialized in logos, identity packages, and packaging design in Chemmad, Kerala.',
+    images: [
+      {
+        url: '/branding_mockup.png',
+        width: 1200,
+        height: 1200,
+        alt: 'BDESIGN Portfolio Branding Mockup'
+      }
+    ]
+  }
+}
 
 export default async function HomePage() {
   const user = await getCurrentUser()
-  const client = await clientPromise
-  const db = client.db()
   
-  // Fetch first profile data (if exists)
-  const rawProfile = await db.collection('profiles').findOne({})
-  const profile = rawProfile ? JSON.parse(JSON.stringify(rawProfile)) : null
-  
-  // Fetch featured projects
-  const rawProjects = await db.collection('projects')
-    .find({ is_featured: true })
-    .sort({ created_at: -1 })
-    .limit(8)
-    .toArray()
-  const projects = JSON.parse(JSON.stringify(rawProjects))
-  
-  // Fetch services
-  const rawServices = await db.collection('services')
-    .find({ is_active: true })
-    .sort({ display_order: 1 })
-    .toArray()
-  const services = JSON.parse(JSON.stringify(rawServices))
-  
-  // Fetch testimonials
-  const rawTestimonials = await db.collection('testimonials')
-    .find({ is_published: true, is_featured: true })
-    .limit(6)
-    .toArray()
-  const testimonials = JSON.parse(JSON.stringify(rawTestimonials))
-  
-  const socialLinks = profile?.social_links as {
-    instagram?: string
-    linkedin?: string
-    twitter?: string
-    behance?: string
-    dribbble?: string
-  } | undefined
+  let projects: any[] = []
+  let testimonials: any[] = []
+  let services: any[] = []
+
+  try {
+    const client = await clientPromise
+    const db = client.db()
+    
+    // Fetch featured completed projects from database
+    const dbProjects = await db.collection('projects')
+      .find({ is_featured: true, status: 'completed' })
+      .sort({ created_at: -1 })
+      .toArray()
+
+    // Fetch clients to resolve company names
+    const dbClients = await db.collection('clients').find({}).toArray()
+    const clientMap = new Map(dbClients.map(c => [c.id, c.company || c.name]))
+
+    projects = dbProjects.map(proj => {
+      // Map DB category to landing page tabs ('Branding', 'Packaging', 'Logos')
+      let displayCategory = 'Branding'
+      const cat = (proj.category || '').toLowerCase()
+      if (cat.includes('logo') || cat.includes('identity')) {
+        displayCategory = 'Logos'
+      } else if (cat.includes('packaging')) {
+        displayCategory = 'Packaging'
+      }
+
+      return {
+        id: proj.id,
+        title: proj.title,
+        category: displayCategory,
+        image: proj.preview_images?.[0] || '/branding_mockup.png',
+        description: proj.description || '',
+        client: clientMap.get(proj.client_id) || 'BDesign Project',
+        year: proj.created_at ? new Date(proj.created_at).getFullYear().toString() : new Date().getFullYear().toString()
+      }
+    })
+
+    // Fetch testimonials from database
+    const dbTestimonials = await db.collection('testimonials')
+      .find({})
+      .sort({ created_at: -1 })
+      .toArray()
+
+    testimonials = dbTestimonials.map(t => ({
+      id: t.id,
+      name: t.name,
+      rating: Number(t.rating) || 5,
+      comment: t.comment,
+      service: t.service || 'Design Service',
+      date: t.date || 'Recently'
+    }))
+
+    // Fetch services from database
+    const dbServices = await db.collection('services')
+      .find({})
+      .sort({ created_at: 1 })
+      .toArray()
+
+    services = dbServices.map(s => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      icon: s.icon || 'palette'
+    }))
+  } catch (err) {
+    console.error('Error fetching CMS data for homepage:', err)
+  }
 
   return (
-    <div className="min-h-screen">
-      <Navbar isLoggedIn={!!user} />
-      
-      <main>
-        <HeroSection
-          name={profile?.full_name || 'Designer'}
-          tagline={profile?.tagline || ''}
-          bio={profile?.bio || ''}
-          yearsExperience={profile?.years_experience || 5}
-        />
-        
-        <ProjectsGallery projects={projects as any || []} />
-        
-        <ServicesSection services={services as any || []} />
-        
-        <TestimonialsSection testimonials={testimonials as any || []} />
-        
-        <ContactSection
-          email={profile?.email}
-          phone={profile?.phone}
-          whatsapp={profile?.whatsapp}
-        />
-      </main>
-      
-      <Footer socialLinks={socialLinks} />
-    </div>
+    <BDesignHomeClient 
+      isLoggedIn={!!user} 
+      initialProjects={projects}
+      initialTestimonials={testimonials}
+      initialServices={services}
+    />
   )
 }
