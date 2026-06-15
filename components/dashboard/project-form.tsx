@@ -21,6 +21,7 @@ interface ProjectFormProps {
   employees?: Employee[]
   isManager?: boolean
   categories?: { value: string; label: string }[]
+  existingTitles?: string[]
   project?: {
     id: string; title: string; description: string | null; category: string
     client_id: string | null; assigned_to?: string | null; amount: number
@@ -57,7 +58,7 @@ const priorities = [
   { value: 'high', label: 'High' },
 ]
 
-export function ProjectForm({ clients, employees = [], isManager = false, project, categories: categoriesProp }: ProjectFormProps) {
+export function ProjectForm({ clients, employees = [], isManager = false, project, categories: categoriesProp, existingTitles = [] }: ProjectFormProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -135,7 +136,14 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
         <form action={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Project Title *</Label>
-            <Input id="title" name="title" defaultValue={project?.title} placeholder="e.g., Logo Design for ABC Corp" required />
+            <Input id="title" name="title" list="project-titles-datalist" defaultValue={project?.title} placeholder="e.g., Logo Design for ABC Corp" required />
+            {existingTitles && existingTitles.length > 0 && (
+              <datalist id="project-titles-datalist">
+                {existingTitles.map(t => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            )}
           </div>
 
           <div className="space-y-2">

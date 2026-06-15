@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/lib/auth'
 import clientPromise from '@/lib/mongodb'
-import { getLocalClients } from '@/lib/local-db'
+import { getLocalClients, getLocalProjects } from '@/lib/local-db'
 import { getUsers } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -21,15 +21,18 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
     ? { id } 
     : { id, $or: [{ user_id: user.id }, { assigned_to: user.id }] }
 
-  // Fetch project, clients, categories, and users list concurrently
-  const [project, clients, categories, allUsers] = await Promise.all([
+  // Fetch project, clients, categories, users list, and projects concurrently
+  const [project, clients, categories, allUsers, projects] = await Promise.all([
     db.collection('projects').findOne(projectQuery),
     getLocalClients(user.id, user.role),
     getProjectCategories(),
-    user.role === 'manager' ? getUsers() : Promise.resolve([])
+    user.role === 'manager' ? getUsers() : Promise.resolve([]),
+    getLocalProjects(user.id, user.role)
   ])
 
   if (!project) notFound()
+
+  const existingTitles = Array.from(new Set(projects.map(p => p.title).filter(Boolean)))
 
   let employees: { id: string; fullName: string; username: string }[] = []
   if (user.role === 'manager') {
@@ -51,7 +54,14 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
           <p className="text-muted-foreground">{project.title}</p>
         </div>
       </div>
-      <ProjectForm clients={clients || []} employees={employees} isManager={user.role === 'manager'} project={projectData as any} categories={categories} />
+      <ProjectForm 
+        clients={clients || []} 
+        employees={employees} 
+        isManager={user.role === 'manager'} 
+        project={projectData as any} 
+        categories={categories} 
+        existingTitles={existingTitles}
+      />
     </div>
   )
 }
