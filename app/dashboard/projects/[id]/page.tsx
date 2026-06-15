@@ -44,12 +44,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!user) return null
 
-  const categoriesList = await getProjectCategories()
-  const categoryLabels: Record<string, string> = {}
-  categoriesList.forEach(cat => {
-    categoryLabels[cat.value] = cat.label
-  })
-
   const clientDb = await clientPromise
   const db = clientDb.db()
 
@@ -57,28 +51,37 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     ? { id } 
     : { id, $or: [{ user_id: user.id }, { assigned_to: user.id }] }
 
-  const project = await db.collection('projects').findOne(query)
+  // Fetch categories and project concurrently
+  const [categoriesList, project] = await Promise.all([
+    getProjectCategories(),
+    db.collection('projects').findOne(query)
+  ])
 
   if (!project) notFound()
 
-  // Fetch client details if client_id exists
-  let client = null
-  if (project.client_id) {
-    client = await db.collection('clients').findOne(
-      user.role === 'manager' 
-        ? { id: project.client_id } 
-        : { id: project.client_id, user_id: user.id }
-    )
-  }
+  const categoryLabels: Record<string, string> = {}
+  categoriesList.forEach(cat => {
+    categoryLabels[cat.value] = cat.label
+  })
 
-  const payments = await db.collection('payments')
-    .find(
-      user.role === 'manager'
-        ? { project_id: id }
-        : { project_id: id, $or: [{ user_id: user.id }, { employee_id: user.id }] }
-    )
-    .sort({ payment_date: -1 })
-    .toArray()
+  // Fetch client details and payments concurrently
+  const [client, payments] = await Promise.all([
+    project.client_id
+      ? db.collection('clients').findOne(
+          user.role === 'manager' 
+            ? { id: project.client_id } 
+            : { id: project.client_id, user_id: user.id }
+        )
+      : Promise.resolve(null),
+    db.collection('payments')
+      .find(
+        user.role === 'manager'
+          ? { project_id: id }
+          : { project_id: id, $or: [{ user_id: user.id }, { employee_id: user.id }] }
+      )
+      .sort({ payment_date: -1 })
+      .toArray()
+  ])
 
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0) || 0
   const remaining = Number(project.amount) - totalPaid

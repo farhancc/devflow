@@ -21,9 +21,11 @@ export default async function ProjectsPage() {
 
   if (!user) return null
 
-  // Fetch local data
-  const rawProjects = await getLocalProjects(user.id)
-  const rawClients = await getLocalClients(user.id)
+  // Fetch local data concurrently and pass user.role to avoid redundant DB lookups
+  const [rawProjects, rawClients] = await Promise.all([
+    getLocalProjects(user.id, user.role),
+    getLocalClients(user.id, user.role)
+  ])
 
   // Format projects to include clients info to match what the component expects
   const projects = rawProjects.map(p => {

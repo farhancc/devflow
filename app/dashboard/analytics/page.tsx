@@ -9,14 +9,16 @@ export default async function AnalyticsPage() {
 
   if (!user) return null
 
-  // Ensure all projects are synced to payments
-  await syncAllProjectsPayments()
+  // Ensure all projects are synced to payments in the background (non-blocking)
+  syncAllProjectsPayments().catch(err => console.error('Failed to sync projects/payments:', err))
 
-  // Fetch local data (automatically scoped to user role by getLocal* functions)
-  const projects = await getLocalProjects(user.id)
-  const clients = await getLocalClients(user.id)
-  const payments = await getLocalPayments(user.id)
-  const expenses = await getLocalExpenses(user.id)
+  // Fetch local data (automatically scoped to user role by getLocal* functions, passing user.role to avoid redundant user role lookups in MongoDB)
+  const [projects, clients, payments, expenses] = await Promise.all([
+    getLocalProjects(user.id, user.role),
+    getLocalClients(user.id, user.role),
+    getLocalPayments(user.id, user.role),
+    getLocalExpenses(user.id, user.role)
+  ])
 
   // Fetch employees list for managers
   let employees: { id: string; fullName: string; username: string }[] = []
@@ -31,7 +33,7 @@ export default async function AnalyticsPage() {
   const currentYear = now.getFullYear()
 
   // 1. Last 6 Months (Monthly Analytics)
-  const monthlyData = []
+  const monthlyData: any[] = []
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const year = d.getFullYear()

@@ -25,7 +25,7 @@ export async function updateProfileDetails(fullName: string, phone?: string, ema
 
   // Update local-db profiles if matching
   const db = await readDb()
-  const pIndex = db.profiles.findIndex(p => p.id === user.id)
+  const pIndex = db.profiles.findIndex((p: any) => p.id === user.id)
   
   if (pIndex !== -1) {
     db.profiles[pIndex].full_name = fullName
@@ -109,7 +109,11 @@ export async function updateMyCredentials(username: string, passwordPlain?: stri
 }
 
 // Team Overview — called from the manager dashboard page
-export async function getTeamOverview() {
+export async function getTeamOverview(preFetchedData?: {
+  allProjects?: any[]
+  allPayments?: any[]
+  allExpenses?: any[]
+}) {
   const user = await getCurrentUser()
   if (!user || user.role !== 'manager') {
     return null
@@ -119,9 +123,9 @@ export async function getTeamOverview() {
   const clientDb = await clientPromise
   const db = clientDb.db()
 
-  const allProjects = await db.collection('projects').find({}).toArray()
-  const allPayments = await db.collection('payments').find({}).toArray()
-  const allExpenses = await db.collection('expenses').find({}).toArray()
+  const allProjects = preFetchedData?.allProjects || await db.collection('projects').find({}).toArray()
+  const allPayments = preFetchedData?.allPayments || await db.collection('payments').find({}).toArray()
+  const allExpenses = preFetchedData?.allExpenses || await db.collection('expenses').find({}).toArray()
 
   const now = new Date()
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

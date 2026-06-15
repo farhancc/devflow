@@ -21,61 +21,55 @@ export default async function NotificationsPage() {
 
   const isManager = user.role === 'manager'
 
-  // Overdue projects
-  const overdueProjectsRaw = await db.collection('projects')
-    .find(isManager ? {
-      status: { $nin: ['completed', 'cancelled'] },
-      deadline: { $lt: todayStr, $ne: null, $exists: true }
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: { $nin: ['completed', 'cancelled'] },
-      deadline: { $lt: todayStr, $ne: null, $exists: true }
-    })
-    .sort({ deadline: 1 })
-    .toArray()
-
-  // Projects due soon
-  const urgentProjectsRaw = await db.collection('projects')
-    .find(isManager ? {
-      status: { $in: ['in_progress', 'revision'] },
-      deadline: { $gte: todayStr, $lte: sevenDaysStr }
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: { $in: ['in_progress', 'revision'] },
-      deadline: { $gte: todayStr, $lte: sevenDaysStr }
-    })
-    .sort({ deadline: 1 })
-    .toArray()
-
-  // Projects awaiting payment
-  const awaitingPaymentRaw = await db.collection('projects')
-    .find(isManager ? {
-      status: 'waiting_payment'
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: 'waiting_payment'
-    })
-    .toArray()
-
-  // Helper function to populate client name
-  const populateClient = async (projectsArray: any[]) => {
-    return await Promise.all(
-      projectsArray.map(async (project) => {
-        let client = null
-        if (project.client_id) {
-          client = await db.collection('clients').findOne({ id: project.client_id })
-        }
-        return {
-          ...project,
-          clients: client
-        }
+  // Fetch projects and clients concurrently
+  const [overdueProjectsRaw, urgentProjectsRaw, awaitingPaymentRaw, dbClients] = await Promise.all([
+    db.collection('projects')
+      .find(isManager ? {
+        status: { $nin: ['completed', 'cancelled'] },
+        deadline: { $lt: todayStr, $ne: null, $exists: true }
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: { $nin: ['completed', 'cancelled'] },
+        deadline: { $lt: todayStr, $ne: null, $exists: true }
       })
-    )
+      .sort({ deadline: 1 })
+      .toArray(),
+    db.collection('projects')
+      .find(isManager ? {
+        status: { $in: ['in_progress', 'revision'] },
+        deadline: { $gte: todayStr, $lte: sevenDaysStr }
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: { $in: ['in_progress', 'revision'] },
+        deadline: { $gte: todayStr, $lte: sevenDaysStr }
+      })
+      .sort({ deadline: 1 })
+      .toArray(),
+    db.collection('projects')
+      .find(isManager ? {
+        status: 'waiting_payment'
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: 'waiting_payment'
+      })
+      .toArray(),
+    db.collection('clients').find({}).toArray()
+  ])
+
+  // Build client map for O(1) in-memory lookup
+  const clientMap = new Map(dbClients.map(c => [c.id, c]))
+
+  // Helper function to populate client name in-memory
+  const populateClient = (projectsArray: any[]) => {
+    return projectsArray.map((project) => ({
+      ...project,
+      clients: project.client_id ? clientMap.get(project.client_id) || null : null
+    }))
   }
 
-  const overdueProjects = await populateClient(overdueProjectsRaw)
-  const urgentProjects = await populateClient(urgentProjectsRaw)
-  const awaitingPayment = await populateClient(awaitingPaymentRaw)
+  const overdueProjects = populateClient(overdueProjectsRaw)
+  const urgentProjects = populateClient(urgentProjectsRaw)
+  const awaitingPayment = populateClient(awaitingPaymentRaw)
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric'

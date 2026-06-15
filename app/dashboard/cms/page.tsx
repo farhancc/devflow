@@ -14,34 +14,33 @@ export default async function CmsPage() {
 
   if (!user) return null
 
-  const categoriesList = await getProjectCategories()
+  const client = await clientPromise
+  const db = client.db()
+
+  // Fetch categories, projects, testimonials, and services concurrently
+  const [categoriesList, projects, testimonials, services] = await Promise.all([
+    getProjectCategories(),
+    db.collection('projects')
+      .find({ user_id: user.id, status: 'completed' })
+      .sort({ created_at: -1 })
+      .toArray(),
+    db.collection('testimonials')
+      .find({ user_id: user.id })
+      .sort({ created_at: -1 })
+      .toArray(),
+    db.collection('services')
+      .find({ user_id: user.id })
+      .sort({ created_at: -1 })
+      .toArray()
+  ])
+
   const categoryLabels: Record<string, string> = {}
   categoriesList.forEach(cat => {
     categoryLabels[cat.value] = cat.label
   })
 
-  const client = await clientPromise
-  const db = client.db()
-  
-  const projects = await db.collection('projects')
-    .find({ user_id: user.id, status: 'completed' })
-    .sort({ created_at: -1 })
-    .toArray()
-
   const featured = projects.filter(p => p.is_featured)
   const notFeatured = projects.filter(p => !p.is_featured)
-
-  // Fetch testimonials scoped to this user
-  const testimonials = await db.collection('testimonials')
-    .find({ user_id: user.id })
-    .sort({ created_at: -1 })
-    .toArray()
-
-  // Fetch services scoped to this user
-  const services = await db.collection('services')
-    .find({ user_id: user.id })
-    .sort({ created_at: -1 })
-    .toArray()
 
   return (
     <div className="space-y-8">

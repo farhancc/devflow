@@ -109,22 +109,128 @@ async function syncProjectPayments(
   }
 }
 
+let lastSyncTime = 0
+const SYNC_THROTTLE_MS = 60 * 1000 // 1 minute throttle
+
 export async function syncAllProjectsPayments() {
+  const now = Date.now()
+  if (now - lastSyncTime < SYNC_THROTTLE_MS) {
+    return
+  }
+  lastSyncTime = now
+
   const client = await clientPromise
   const db = client.db()
-  const projects = await db.collection('projects').find({}).toArray()
+  
+  const [projects, payments] = await Promise.all([
+    db.collection('projects').find({}).toArray(),
+    db.collection('payments').find({}).toArray()
+  ])
+
+  const paymentsByProject: Record<string, any[]> = {}
+  for (const p of payments) {
+    if (!paymentsByProject[p.project_id]) {
+      paymentsByProject[p.project_id] = []
+    }
+    paymentsByProject[p.project_id].push(p)
+  }
+
+  const bulkOps: any[] = []
+
   for (const project of projects) {
-    await syncProjectPayments(
-      db,
-      project.id,
-      project.title,
-      project.client_id,
-      project.user_id,
-      project.assigned_to,
-      project.amount,
-      project.advance_payment || 0,
-      project.status
-    )
+    const pId = project.id
+    const pTitle = project.title
+    const pClientId = (project.client_id && project.client_id !== 'none') ? project.client_id : null
+    const pUserId = project.user_id
+    const pEmployeeId = (project.assigned_to && project.assigned_to !== 'none') ? project.assigned_to : null
+    const pAmount = Number(project.amount)
+    const pAdvance = Number(project.advance_payment || 0)
+    const pStatus = project.status
+
+    const projPayments = paymentsByProject[pId] || []
+    
+    // 1. Advance Payment Check
+    const advanceDoc = projPayments.find(p => p.notes && p.notes.toLowerCase().includes('advance payment'))
+    
+    if (pAdvance > 0) {
+      if (!advanceDoc) {
+        bulkOps.push({
+          insertOne: {
+            document: {
+              id: `pay-${Math.random().toString(36).substring(2, 9)}`,
+              user_id: pUserId,
+              employee_id: pEmployeeId,
+              amount: pAdvance,
+              payment_date: project.created_at ? project.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+              project_id: pId,
+              client_id: pClientId,
+              status: 'paid',
+              notes: `Advance payment for ${pTitle}`,
+              created_at: new Date().toISOString()
+            }
+          }
+        })
+      } else if (advanceDoc.amount !== pAdvance || advanceDoc.employee_id !== pEmployeeId || advanceDoc.client_id !== pClientId) {
+        bulkOps.push({
+          updateOne: {
+            filter: { id: advanceDoc.id },
+            update: { $set: { amount: pAdvance, employee_id: pEmployeeId, client_id: pClientId } }
+          }
+        })
+      }
+    } else if (advanceDoc) {
+      bulkOps.push({
+        deleteOne: { filter: { id: advanceDoc.id } }
+      })
+    }
+
+    // 2. Final Payment Check
+    const finalDoc = projPayments.find(p => p.notes && p.notes.toLowerCase().includes('final payment'))
+    
+    if (pStatus === 'completed') {
+      const otherPaymentsTotal = pAdvance
+      const remaining = pAmount - otherPaymentsTotal
+      
+      if (remaining > 0) {
+        if (!finalDoc) {
+          bulkOps.push({
+            insertOne: {
+              document: {
+                id: `pay-${Math.random().toString(36).substring(2, 9)}`,
+                user_id: pUserId,
+                employee_id: pEmployeeId,
+                amount: remaining,
+                payment_date: project.completed_date || new Date().toISOString().split('T')[0],
+                project_id: pId,
+                client_id: pClientId,
+                status: 'paid',
+                notes: `Final payment for ${pTitle}`,
+                created_at: new Date().toISOString()
+              }
+            }
+          })
+        } else if (finalDoc.amount !== remaining || finalDoc.employee_id !== pEmployeeId || finalDoc.client_id !== pClientId) {
+          bulkOps.push({
+            updateOne: {
+              filter: { id: finalDoc.id },
+              update: { $set: { amount: remaining, employee_id: pEmployeeId, client_id: pClientId } }
+            }
+          })
+        }
+      } else if (finalDoc) {
+        bulkOps.push({
+          deleteOne: { filter: { id: finalDoc.id } }
+        })
+      }
+    } else if (finalDoc) {
+      bulkOps.push({
+        deleteOne: { filter: { id: finalDoc.id } }
+      })
+    }
+  }
+
+  if (bulkOps.length > 0) {
+    await db.collection('payments').bulkWrite(bulkOps)
   }
 }
 

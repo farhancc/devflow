@@ -8,12 +8,15 @@ export default async function NewProjectPage() {
   const user = await getCurrentUser()
   if (!user) return null
 
-  const clients = await getLocalClients(user.id)
-  const categories = await getProjectCategories()
+  // Fetch clients, categories, and users list concurrently
+  const [clients, categories, allUsers] = await Promise.all([
+    getLocalClients(user.id, user.role),
+    getProjectCategories(),
+    user.role === 'manager' ? getUsers() : Promise.resolve([])
+  ])
 
   let employees: { id: string; fullName: string; username: string }[] = []
   if (user.role === 'manager') {
-    const allUsers = await getUsers()
     employees = allUsers
       .filter(u => u.id !== user.id)
       .map(u => ({ id: u.id, fullName: u.fullName, username: u.username }))

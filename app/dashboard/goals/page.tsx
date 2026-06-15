@@ -16,10 +16,12 @@ export default async function GoalsPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfMonthStr = startOfMonth.toISOString().split('T')[0]
 
-  const goals = await getLocalGoals(user.id)
-  const payments = await getLocalPayments(user.id)
-  const projects = await getLocalProjects(user.id)
-  const expenses = await getLocalExpenses(user.id)
+  const [goals, payments, projects, expenses] = await Promise.all([
+    getLocalGoals(user.id, user.role),
+    getLocalPayments(user.id, user.role),
+    getLocalProjects(user.id, user.role),
+    getLocalExpenses(user.id, user.role)
+  ])
 
   // Monthly values
   const currentMonthPayments = payments.filter(p => p.payment_date >= startOfMonthStr)

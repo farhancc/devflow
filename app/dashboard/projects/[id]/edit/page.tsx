@@ -20,15 +20,19 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
   const projectQuery = user.role === 'manager' 
     ? { id } 
     : { id, $or: [{ user_id: user.id }, { assigned_to: user.id }] }
-  const project = await db.collection('projects').findOne(projectQuery)
-  if (!project) notFound()
 
-  const clients = await getLocalClients(user.id)
-  const categories = await getProjectCategories()
+  // Fetch project, clients, categories, and users list concurrently
+  const [project, clients, categories, allUsers] = await Promise.all([
+    db.collection('projects').findOne(projectQuery),
+    getLocalClients(user.id, user.role),
+    getProjectCategories(),
+    user.role === 'manager' ? getUsers() : Promise.resolve([])
+  ])
+
+  if (!project) notFound()
 
   let employees: { id: string; fullName: string; username: string }[] = []
   if (user.role === 'manager') {
-    const allUsers = await getUsers()
     employees = allUsers
       .filter(u => u.id !== user.id)
       .map(u => ({ id: u.id, fullName: u.fullName, username: u.username }))

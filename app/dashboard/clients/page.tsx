@@ -11,8 +11,10 @@ export default async function ClientsPage() {
 
   if (!user) return null
 
-  const clients = await getLocalClients(user.id)
-  const projects = await getLocalProjects(user.id)
+  const [clients, projects] = await Promise.all([
+    getLocalClients(user.id, user.role),
+    getLocalProjects(user.id, user.role)
+  ])
 
   const projectCountMap = projects.reduce((acc, p) => {
     if (p.client_id) {

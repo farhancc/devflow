@@ -17,8 +17,8 @@ export default async function ExpensesPage() {
   const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0)
 
-  // Fetch all expenses (role-based logic handled in getLocalExpenses)
-  const expenses = await getLocalExpenses(user.id)
+  // Fetch all expenses (role-based logic handled in getLocalExpenses, passing user.role to avoid redundant user role lookups in MongoDB)
+  const expenses = await getLocalExpenses(user.id, user.role)
 
   // Fetch employees list for managers
   let employees: { id: string; fullName: string; username: string }[] = []

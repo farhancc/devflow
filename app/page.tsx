@@ -41,14 +41,23 @@ export default async function HomePage() {
     const client = await clientPromise
     const db = client.db()
     
-    // Fetch featured completed projects from database
-    const dbProjects = await db.collection('projects')
-      .find({ is_featured: true, status: 'completed' })
-      .sort({ created_at: -1 })
-      .toArray()
+    // Fetch featured completed projects, clients, testimonials, and services concurrently
+    const [dbProjects, dbClients, dbTestimonials, dbServices] = await Promise.all([
+      db.collection('projects')
+        .find({ is_featured: true, status: 'completed' })
+        .sort({ created_at: -1 })
+        .toArray(),
+      db.collection('clients').find({}).toArray(),
+      db.collection('testimonials')
+        .find({})
+        .sort({ created_at: -1 })
+        .toArray(),
+      db.collection('services')
+        .find({})
+        .sort({ created_at: 1 })
+        .toArray()
+    ])
 
-    // Fetch clients to resolve company names
-    const dbClients = await db.collection('clients').find({}).toArray()
     const clientMap = new Map(dbClients.map(c => [c.id, c.company || c.name]))
 
     projects = dbProjects.map(proj => {
@@ -72,12 +81,6 @@ export default async function HomePage() {
       }
     })
 
-    // Fetch testimonials from database
-    const dbTestimonials = await db.collection('testimonials')
-      .find({})
-      .sort({ created_at: -1 })
-      .toArray()
-
     testimonials = dbTestimonials.map(t => ({
       id: t.id,
       name: t.name,
@@ -86,12 +89,6 @@ export default async function HomePage() {
       service: t.service || 'Design Service',
       date: t.date || 'Recently'
     }))
-
-    // Fetch services from database
-    const dbServices = await db.collection('services')
-      .find({})
-      .sort({ created_at: 1 })
-      .toArray()
 
     services = dbServices.map(s => ({
       id: s.id,

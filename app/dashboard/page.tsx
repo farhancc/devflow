@@ -42,15 +42,15 @@ export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) return null
 
-  // Ensure all projects are synced to payments
-  await syncAllProjectsPayments()
+  // Ensure all projects are synced to payments in the background (non-blocking)
+  syncAllProjectsPayments().catch(err => console.error('Failed to sync projects/payments:', err))
 
-  // Per-user data
-  const projects = await getLocalProjects(user.id)
-  const clients = await getLocalClients(user.id)
-  const payments = await getLocalPayments(user.id)
-  const expenses = await getLocalExpenses(user.id)
-  const goals = await getLocalGoals(user.id)
+  // Per-user data (passing user.role to avoid redundant user role lookups in MongoDB)
+  const projects = await getLocalProjects(user.id, user.role)
+  const clients = await getLocalClients(user.id, user.role)
+  const payments = await getLocalPayments(user.id, user.role)
+  const expenses = await getLocalExpenses(user.id, user.role)
+  const goals = await getLocalGoals(user.id, user.role)
 
   const activeProjectsList = projects.filter(p =>
     ['in_progress', 'revision', 'inquiry'].includes(p.status)
@@ -64,8 +64,31 @@ export default async function DashboardPage() {
   const monthlyIncome = payments.filter(p => p.payment_date >= startOfMonthStr).reduce((s, p) => s + p.amount, 0)
   const monthlyExpenseTotal = expenses.filter(e => e.expense_date >= startOfMonthStr).reduce((s, e) => s + e.amount, 0)
 
-  const currentGoal = goals.find(g => g.month === startOfMonth.getMonth() + 1 && g.year === startOfMonth.getFullYear())
-  const goalProgress = currentGoal ? Math.min((monthlyIncome / currentGoal.target_value) * 100, 100) : 0
+  const monthGoals = goals.filter(g => g.month === startOfMonth.getMonth() + 1 && g.year === startOfMonth.getFullYear())
+  const currentGoal = monthGoals.find(g => g.target_type === 'income')
+    || monthGoals.find(g => g.target_type === 'projects')
+    || monthGoals.find(g => g.target_type === 'expenses')
+
+  let goalProgress = 0
+  let goalLabel = 'Monthly Goal'
+  let goalSubtext = 'No goal set'
+
+  if (currentGoal) {
+    if (currentGoal.target_type === 'income') {
+      goalLabel = 'Monthly Income Goal'
+      goalProgress = currentGoal.target_value > 0 ? Math.min((monthlyIncome / currentGoal.target_value) * 100, 100) : 0
+      goalSubtext = `₹${monthlyIncome.toLocaleString('en-IN')} / ₹${currentGoal.target_value.toLocaleString('en-IN')}`
+    } else if (currentGoal.target_type === 'projects') {
+      goalLabel = 'Projects Completion Goal'
+      const completedProjectsCount = projects.filter(p => p.status === 'completed' && p.completed_date && p.completed_date >= startOfMonthStr).length
+      goalProgress = currentGoal.target_value > 0 ? Math.min((completedProjectsCount / currentGoal.target_value) * 100, 100) : 0
+      goalSubtext = `${completedProjectsCount} / ${currentGoal.target_value} projects completed`
+    } else if (currentGoal.target_type === 'expenses') {
+      goalLabel = 'Monthly Expense Cap'
+      goalProgress = currentGoal.target_value > 0 ? Math.min((monthlyExpenseTotal / currentGoal.target_value) * 100, 100) : 0
+      goalSubtext = `₹${monthlyExpenseTotal.toLocaleString('en-IN')} / ₹${currentGoal.target_value.toLocaleString('en-IN')}`
+    }
+  }
 
   const sevenDaysStr = new Date(Date.now() + 7 * 864e5).toISOString().split('T')[0]
   const todayStr = new Date().toISOString().split('T')[0]
@@ -75,7 +98,11 @@ export default async function DashboardPage() {
     .slice(0, 3)
 
   const isManager = user.role === 'manager'
-  const teamOverview = isManager ? await getTeamOverview() : null
+  const teamOverview = isManager ? await getTeamOverview({
+    allProjects: projects,
+    allPayments: payments,
+    allExpenses: expenses
+  }) : null
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -129,14 +156,19 @@ export default async function DashboardPage() {
 
           <Card className="border-0 shadow-md bg-card/60 backdrop-blur-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Goal</CardTitle>
+              <CardTitle className="text-sm font-medium">{goalLabel}</CardTitle>
               <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{goalProgress.toFixed(0)}%</div>
-              {currentGoal
-                ? <Progress value={goalProgress} className="mt-2 h-2" />
-                : <p className="text-xs text-muted-foreground mt-1">No goal set</p>}
+              {currentGoal ? (
+                <>
+                  <Progress value={goalProgress} className="mt-2 h-2" />
+                  <p className="text-[10px] text-muted-foreground mt-1">{goalSubtext}</p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">No goal set</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -166,14 +198,19 @@ export default async function DashboardPage() {
 
           <Card className="border-0 shadow-md bg-card/60 backdrop-blur-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Goal</CardTitle>
+              <CardTitle className="text-sm font-medium">{goalLabel}</CardTitle>
               <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{goalProgress.toFixed(0)}%</div>
-              {currentGoal
-                ? <Progress value={goalProgress} className="mt-2 h-2" />
-                : <p className="text-xs text-muted-foreground mt-1">No goal set</p>}
+              {currentGoal ? (
+                <>
+                  <Progress value={goalProgress} className="mt-2 h-2" />
+                  <p className="text-[10px] text-muted-foreground mt-1">{goalSubtext}</p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">No goal set</p>
+              )}
             </CardContent>
           </Card>
 

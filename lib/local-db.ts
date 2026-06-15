@@ -294,47 +294,58 @@ async function getUserRole(userId: string): Promise<'manager' | 'designer'> {
 }
 
 // DB Selects
-export async function getLocalClients(userId: string): Promise<Client[]> {
+export async function getLocalClients(userId: string, role?: 'manager' | 'designer'): Promise<Client[]> {
   const db = await getDb();
-  const role = await getUserRole(userId);
-  const query = role === 'manager' ? {} : { user_id: userId };
+  const actualRole = role || await getUserRole(userId);
+  const query = actualRole === 'manager' ? {} : { user_id: userId };
   const res = await db.collection<Client>('clients').find(query).toArray();
   return serialize(res);
 }
 
-export async function getLocalProjects(userId: string): Promise<Project[]> {
+export async function getLocalProjects(userId: string, role?: 'manager' | 'designer'): Promise<Project[]> {
   const db = await getDb();
-  const role = await getUserRole(userId);
-  const query = role === 'manager' 
+  const actualRole = role || await getUserRole(userId);
+  const query = actualRole === 'manager' 
     ? {} 
     : { $or: [{ user_id: userId }, { assigned_to: userId }] };
   const res = await db.collection<Project>('projects').find(query).toArray();
   return serialize(res);
 }
 
-export async function getLocalPayments(userId: string): Promise<Payment[]> {
+export async function getLocalPayments(userId: string, role?: 'manager' | 'designer'): Promise<Payment[]> {
   const db = await getDb();
-  const role = await getUserRole(userId);
-  const query = role === 'manager' 
+  const actualRole = role || await getUserRole(userId);
+  const query = actualRole === 'manager' 
     ? {} 
     : { $or: [{ user_id: userId }, { employee_id: userId }] };
   const res = await db.collection<Payment>('payments').find(query).toArray();
   return serialize(res);
 }
 
-export async function getLocalExpenses(userId: string): Promise<Expense[]> {
+export async function getLocalExpenses(userId: string, role?: 'manager' | 'designer'): Promise<Expense[]> {
   const db = await getDb();
-  const role = await getUserRole(userId);
-  const query = role === 'manager' 
+  const actualRole = role || await getUserRole(userId);
+  const query = actualRole === 'manager' 
     ? {} 
     : { $or: [{ user_id: userId }, { employee_id: userId }] };
   const res = await db.collection<Expense>('expenses').find(query).toArray();
   return serialize(res);
 }
 
-export async function getLocalGoals(userId: string): Promise<Goal[]> {
+export async function getLocalGoals(userId: string, role?: 'manager' | 'designer'): Promise<Goal[]> {
   const db = await getDb();
-  const res = await db.collection<Goal>('goals').find({ user_id: userId }).toArray();
+  const actualRole = role || await getUserRole(userId);
+  
+  let query = {};
+  if (actualRole !== 'manager') {
+    const managers = await db.collection('users').find({ role: 'manager' }).toArray();
+    const managerIds = managers.map((m: any) => m.id);
+    query = { user_id: { $in: [userId, ...managerIds] } };
+  } else {
+    query = { user_id: userId };
+  }
+
+  const res = await db.collection<Goal>('goals').find(query).toArray();
   return serialize(res);
 }
 
@@ -345,7 +356,7 @@ export async function getLocalProfile(userId: string): Promise<Profile | null> {
 }
 
 // Compatibility layer for settings profile update Server Actions
-export async function readDb() {
+export async function readDb(): Promise<any> {
   const db = await getDb();
   const clients = (await db.collection<Client>('clients').find({}).toArray()) as any[];
   const projects = (await db.collection<Project>('projects').find({}).toArray()) as any[];

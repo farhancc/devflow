@@ -30,24 +30,28 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   const db = clientDb.db()
 
   const clientQuery = user.role === 'manager' ? { id } : { id, user_id: user.id }
-  const client = await db.collection('clients').findOne(clientQuery)
-
-  if (!client) notFound()
 
   const projectsQuery = user.role === 'manager' 
     ? { client_id: id } 
     : { client_id: id, $or: [{ user_id: user.id }, { assigned_to: user.id }] }
-  const projects = await db.collection('projects')
-    .find(projectsQuery)
-    .sort({ created_at: -1 })
-    .toArray()
 
   const paymentsQuery = user.role === 'manager' 
     ? { client_id: id } 
     : { client_id: id, $or: [{ user_id: user.id }, { employee_id: user.id }] }
-  const payments = await db.collection('payments')
-    .find(paymentsQuery)
-    .toArray()
+
+  // Fetch client details, projects, and payments concurrently
+  const [client, projects, payments] = await Promise.all([
+    db.collection('clients').findOne(clientQuery),
+    db.collection('projects')
+      .find(projectsQuery)
+      .sort({ created_at: -1 })
+      .toArray(),
+    db.collection('payments')
+      .find(paymentsQuery)
+      .toArray()
+  ])
+
+  if (!client) notFound()
 
   const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0) || 0
   const activeProjects = projects.filter(p => ['in_progress', 'revision', 'inquiry'].includes(p.status))

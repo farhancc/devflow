@@ -28,36 +28,36 @@ export default async function DashboardLayout({
 
   const isManager = user.role === 'manager'
 
-  const overdueCount = await db.collection('projects').countDocuments(
-    isManager ? {
-      status: { $nin: ['completed', 'cancelled'] },
-      deadline: { $lt: todayStr, $ne: null, $exists: true }
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: { $nin: ['completed', 'cancelled'] },
-      deadline: { $lt: todayStr, $ne: null, $exists: true }
-    }
-  )
-
-  const urgentCount = await db.collection('projects').countDocuments(
-    isManager ? {
-      status: { $in: ['in_progress', 'revision'] },
-      deadline: { $gte: todayStr, $lte: sevenDaysStr }
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: { $in: ['in_progress', 'revision'] },
-      deadline: { $gte: todayStr, $lte: sevenDaysStr }
-    }
-  )
-
-  const awaitingCount = await db.collection('projects').countDocuments(
-    isManager ? {
-      status: 'waiting_payment'
-    } : {
-      $or: [{ user_id: user.id }, { assigned_to: user.id }],
-      status: 'waiting_payment'
-    }
-  )
+  const [overdueCount, urgentCount, awaitingCount] = await Promise.all([
+    db.collection('projects').countDocuments(
+      isManager ? {
+        status: { $nin: ['completed', 'cancelled'] },
+        deadline: { $lt: todayStr, $ne: null, $exists: true }
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: { $nin: ['completed', 'cancelled'] },
+        deadline: { $lt: todayStr, $ne: null, $exists: true }
+      }
+    ),
+    db.collection('projects').countDocuments(
+      isManager ? {
+        status: { $in: ['in_progress', 'revision'] },
+        deadline: { $gte: todayStr, $lte: sevenDaysStr }
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: { $in: ['in_progress', 'revision'] },
+        deadline: { $gte: todayStr, $lte: sevenDaysStr }
+      }
+    ),
+    db.collection('projects').countDocuments(
+      isManager ? {
+        status: 'waiting_payment'
+      } : {
+        $or: [{ user_id: user.id }, { assigned_to: user.id }],
+        status: 'waiting_payment'
+      }
+    )
+  ])
 
   const notificationCount = overdueCount + urgentCount + awaitingCount
 

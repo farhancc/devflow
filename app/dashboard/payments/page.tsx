@@ -25,22 +25,24 @@ export default async function PaymentsPage() {
     ? {} 
     : { $or: [{ user_id: user.id }, { employee_id: user.id }] }
 
-  // Fetch all payments
-  const paymentsRaw = JSON.parse(JSON.stringify(await db.collection('payments')
-    .find(queryFilter)
-    .sort({ payment_date: -1 })
-    .toArray()))
-
-  // Fetch projects and clients
-  const projects = JSON.parse(JSON.stringify(await db.collection('projects')
-    .find(queryFilter)
-    .sort({ title: 1 })
-    .toArray()))
-
-  const clients = JSON.parse(JSON.stringify(await db.collection('clients')
-    .find(user.role === 'manager' ? {} : { user_id: user.id })
-    .sort({ name: 1 })
-    .toArray()))
+  // Fetch all payments, projects, and clients concurrently
+  const [paymentsRaw, projects, clients] = await Promise.all([
+    db.collection('payments')
+      .find(queryFilter)
+      .sort({ payment_date: -1 })
+      .toArray()
+      .then(arr => JSON.parse(JSON.stringify(arr))),
+    db.collection('projects')
+      .find(queryFilter)
+      .sort({ title: 1 })
+      .toArray()
+      .then(arr => JSON.parse(JSON.stringify(arr))),
+    db.collection('clients')
+      .find(user.role === 'manager' ? {} : { user_id: user.id })
+      .sort({ name: 1 })
+      .toArray()
+      .then(arr => JSON.parse(JSON.stringify(arr)))
+  ])
 
   // Fetch employees list for managers
   let employees: { id: string; fullName: string; username: string }[] = []

@@ -10,16 +10,20 @@ export default async function CalendarPage() {
   const clientDb = await clientPromise
   const db = clientDb.db()
 
-  // Fetch all projects for the user with a deadline
-  const projects = await db.collection('projects')
-    .find({
-      user_id: user.id,
-      deadline: { $ne: null, $exists: true }
-    })
-    .toArray()
+  // Fetch projects, clients, and custom events concurrently
+  const [projects, clients, events] = await Promise.all([
+    db.collection('projects')
+      .find({
+        user_id: user.id,
+        deadline: { $ne: null, $exists: true }
+      })
+      .toArray(),
+    db.collection('clients').find({ user_id: user.id }).toArray(),
+    db.collection('events')
+      .find({ user_id: user.id })
+      .toArray()
+  ])
 
-  // Fetch all clients to display names
-  const clients = await db.collection('clients').find({ user_id: user.id }).toArray()
   const clientsMap: Record<string, string> = {}
   clients.forEach(c => {
     clientsMap[c.id] = c.name
@@ -33,11 +37,6 @@ export default async function CalendarPage() {
     status: p.status,
     clientName: p.client_id ? clientsMap[p.client_id] || 'Unknown Client' : 'No Client'
   }))
-
-  // Fetch all custom events for this user
-  const events = await db.collection('events')
-    .find({ user_id: user.id })
-    .toArray()
 
   const formattedEvents = events.map(e => ({
     id: e.id,
