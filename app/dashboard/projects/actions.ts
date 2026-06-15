@@ -109,6 +109,25 @@ async function syncProjectPayments(
   }
 }
 
+export async function syncAllProjectsPayments() {
+  const client = await clientPromise
+  const db = client.db()
+  const projects = await db.collection('projects').find({}).toArray()
+  for (const project of projects) {
+    await syncProjectPayments(
+      db,
+      project.id,
+      project.title,
+      project.client_id,
+      project.user_id,
+      project.assigned_to,
+      project.amount,
+      project.advance_payment || 0,
+      project.status
+    )
+  }
+}
+
 export async function createProject(formData: FormData) {
   const user = await getCurrentUser()
   if (!user) return { error: 'Unauthorized' }

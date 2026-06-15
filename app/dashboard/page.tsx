@@ -27,6 +27,7 @@ import {
   getLocalGoals
 } from '@/lib/local-db'
 import { getTeamOverview } from '@/app/dashboard/settings/actions'
+import { syncAllProjectsPayments } from '@/app/dashboard/projects/actions'
 
 const statusColors: Record<string, string> = {
   inquiry: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -40,6 +41,9 @@ const statusColors: Record<string, string> = {
 export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) return null
+
+  // Ensure all projects are synced to payments
+  await syncAllProjectsPayments()
 
   // Per-user data
   const projects = await getLocalProjects(user.id)
