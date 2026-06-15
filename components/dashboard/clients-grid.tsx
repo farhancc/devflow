@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -50,6 +51,7 @@ interface ClientsGridProps {
 }
 
 export function ClientsGrid({ clients }: ClientsGridProps) {
+  const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -59,6 +61,7 @@ export function ClientsGrid({ clients }: ClientsGridProps) {
     await deleteClient(deleteId)
     setIsDeleting(false)
     setDeleteId(null)
+    router.refresh()
   }
 
   const getInitials = (name: string) => {

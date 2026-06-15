@@ -4,6 +4,111 @@ import { getCurrentUser } from '@/lib/auth'
 import clientPromise from '@/lib/mongodb'
 import { revalidatePath } from 'next/cache'
 
+async function syncProjectPayments(
+  db: any,
+  projectId: string,
+  title: string,
+  clientId: string | null,
+  userId: string,
+  assignedTo: string | null | undefined,
+  amount: number,
+  advancePayment: number,
+  status: string
+) {
+  const client_id = (clientId && clientId !== 'none') ? clientId : null
+  const employee_id = (assignedTo && assignedTo !== 'none') ? assignedTo : null
+
+  // 1. Sync Advance Payment
+  const advancePaymentDoc = await db.collection('payments').findOne({
+    project_id: projectId,
+    notes: { $regex: /Advance payment/i }
+  })
+
+  if (advancePayment > 0) {
+    if (advancePaymentDoc) {
+      await db.collection('payments').updateOne(
+        { id: advancePaymentDoc.id },
+        { 
+          $set: { 
+            amount: advancePayment,
+            client_id: client_id,
+            employee_id: employee_id,
+            notes: `Advance payment for ${title}`,
+            updated_at: new Date().toISOString()
+          } 
+        }
+      )
+    } else {
+      const paymentId = `pay-${Math.random().toString(36).substring(2, 9)}`
+      await db.collection('payments').insertOne({
+        id: paymentId,
+        user_id: userId,
+        employee_id: employee_id,
+        amount: advancePayment,
+        payment_date: new Date().toISOString().split('T')[0],
+        project_id: projectId,
+        client_id: client_id,
+        status: 'paid',
+        notes: `Advance payment for ${title}`,
+        created_at: new Date().toISOString()
+      })
+    }
+  } else if (advancePaymentDoc) {
+    await db.collection('payments').deleteOne({ id: advancePaymentDoc.id })
+  }
+
+  // 2. Sync Final Payment when completed
+  const finalPaymentDoc = await db.collection('payments').findOne({
+    project_id: projectId,
+    notes: { $regex: /Final payment/i }
+  })
+
+  if (status === 'completed') {
+    // Calculate how much has been paid so far (excluding the final payment doc itself)
+    const otherPayments = await db.collection('payments').find({
+      project_id: projectId,
+      id: { $ne: finalPaymentDoc?.id || '' }
+    }).toArray()
+    const totalPaidOther = otherPayments.reduce((sum: number, p: any) => sum + Number(p.amount), 0)
+    const remaining = amount - totalPaidOther
+
+    if (remaining > 0) {
+      if (finalPaymentDoc) {
+        await db.collection('payments').updateOne(
+          { id: finalPaymentDoc.id },
+          { 
+            $set: { 
+              amount: remaining,
+              client_id: client_id,
+              employee_id: employee_id,
+              notes: `Final payment for ${title}`,
+              updated_at: new Date().toISOString()
+            } 
+          }
+        )
+      } else {
+        const paymentId = `pay-${Math.random().toString(36).substring(2, 9)}`
+        await db.collection('payments').insertOne({
+          id: paymentId,
+          user_id: userId,
+          employee_id: employee_id,
+          amount: remaining,
+          payment_date: new Date().toISOString().split('T')[0],
+          project_id: projectId,
+          client_id: client_id,
+          status: 'paid',
+          notes: `Final payment for ${title}`,
+          created_at: new Date().toISOString()
+        })
+      }
+    } else if (finalPaymentDoc) {
+      await db.collection('payments').deleteOne({ id: finalPaymentDoc.id })
+    }
+  } else if (finalPaymentDoc) {
+    await db.collection('payments').deleteOne({ id: finalPaymentDoc.id })
+  }
+}
+
 export async function createProject(formData: FormData) {
   const user = await getCurrentUser()
   if (!user) return { error: 'Unauthorized' }
@@ -41,6 +146,19 @@ export async function createProject(formData: FormData) {
   }
 
   await db.collection('projects').insertOne(newProject)
+  
+  await syncProjectPayments(
+    db,
+    newId,
+    title,
+    newProject.client_id,
+    user.id,
+    newProject.assigned_to,
+    amount,
+    advancePayment,
+    status
+  )
+
   revalidatePath('/dashboard/projects')
   revalidatePath('/')
   
@@ -87,6 +205,21 @@ export async function updateProject(id: string, formData: FormData) {
     }
   )
 
+  const project = await db.collection('projects').findOne(query)
+  if (project) {
+    await syncProjectPayments(
+      db,
+      id,
+      project.title,
+      project.client_id,
+      project.user_id,
+      project.assigned_to,
+      project.amount,
+      project.advance_payment || 0,
+      project.status
+    )
+  }
+
   revalidatePath('/dashboard/projects')
   revalidatePath(`/dashboard/projects/${id}`)
   revalidatePath('/')
@@ -101,6 +234,9 @@ export async function deleteProject(id: string) {
   const db = client.db()
   
   const query = user.role === 'manager' ? { id } : { id, user_id: user.id }
+  
+  // Cascade delete payments
+  await db.collection('payments').deleteMany({ project_id: id })
   await db.collection('projects').deleteOne(query)
 
   revalidatePath('/dashboard/projects')
@@ -124,6 +260,21 @@ export async function updateProjectStatus(id: string, status: string) {
     query,
     { $set: updateData }
   )
+
+  const project = await db.collection('projects').findOne(query)
+  if (project) {
+    await syncProjectPayments(
+      db,
+      id,
+      project.title,
+      project.client_id,
+      project.user_id,
+      project.assigned_to,
+      project.amount,
+      project.advance_payment || 0,
+      status
+    )
+  }
 
   revalidatePath('/dashboard/projects')
   revalidatePath(`/dashboard/projects/${id}`)

@@ -93,7 +93,19 @@ export async function deleteClient(id: string) {
   const client = await clientPromise
   const db = client.db()
   
-  await db.collection('clients').deleteOne({ id, user_id: user.id })
+  const query = user.role === 'manager' ? { id } : { id, user_id: user.id }
+  
+  // Nullify client_id on associated projects and payments
+  await db.collection('projects').updateMany(
+    { client_id: id },
+    { $set: { client_id: null } }
+  )
+  await db.collection('payments').updateMany(
+    { client_id: id },
+    { $set: { client_id: null } }
+  )
+
+  await db.collection('clients').deleteOne(query)
 
   revalidatePath('/dashboard/clients')
   return { success: true }

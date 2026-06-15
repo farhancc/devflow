@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { 
   ArrowLeft, Edit, DollarSign, Calendar, User, 
-  Tag, AlertCircle, CheckCircle2, Clock, Star
+  Tag, AlertCircle, CheckCircle2, Clock, Star, Trash2
 } from 'lucide-react'
 import { deleteProject } from '@/app/dashboard/projects/actions'
 import { redirect } from 'next/navigation'
+import { getProjectCategories } from '@/app/dashboard/projects/actions'
 
 const statusColors: Record<string, string> = {
   inquiry: 'bg-blue-100 text-blue-800',
@@ -137,6 +138,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               Edit
             </Link>
           </Button>
+          <form action={handleDeleteAction} onSubmit={(e) => { if (!confirm('Are you sure you want to delete this project?')) e.preventDefault() }}>
+            <Button variant="destructive" type="submit">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </form>
         </div>
       </div>
 

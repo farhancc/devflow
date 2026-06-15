@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -88,6 +89,7 @@ const categoryLabels: Record<string, string> = {
 }
 
 export function ProjectsTable({ projects, statusColors }: ProjectsTableProps) {
+  const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -95,6 +97,7 @@ export function ProjectsTable({ projects, statusColors }: ProjectsTableProps) {
 
   const handleStatusChange = async (id: string, status: string) => {
     await updateProjectStatus(id, status)
+    router.refresh()
   }
 
   const handleDelete = async () => {
@@ -103,6 +106,7 @@ export function ProjectsTable({ projects, statusColors }: ProjectsTableProps) {
     await deleteProject(deleteId)
     setIsDeleting(false)
     setDeleteId(null)
+    router.refresh()
   }
 
   const formatDate = (dateString: string | null) => {
