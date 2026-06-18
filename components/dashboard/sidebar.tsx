@@ -53,7 +53,6 @@ function NavContent({ role, notificationCount }: DashboardSidebarProps) {
     
     if (role === 'designer') {
       const restricted = [
-        '/dashboard/clients',
         '/dashboard/payments',
         '/dashboard/expenses'
       ]
