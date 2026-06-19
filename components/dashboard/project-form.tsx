@@ -219,14 +219,21 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="client_id">Client</Label>
-              <Select name="client_id" defaultValue={project?.client_id || 'none'}>
-                <SelectTrigger><SelectValue placeholder="Select client (optional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No client</SelectItem>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="client_name">Client Name</Label>
+              <Input
+                id="client_name"
+                name="client_name"
+                list="client-names-datalist"
+                defaultValue={project?.client_id ? clients.find(c => c.id === project.client_id)?.name || '' : ''}
+                placeholder="Type client name (e.g., Acme Corp)"
+              />
+              {clients && clients.length > 0 && (
+                <datalist id="client-names-datalist">
+                  {clients.map(c => (
+                    <option key={c.id} value={c.name} />
+                  ))}
+                </datalist>
+              )}
             </div>
           </div>
 

@@ -241,7 +241,7 @@ export async function createProject(formData: FormData) {
   const title        = formData.get('title') as string
   const description  = formData.get('description') as string
   const category     = formData.get('category') as string
-  const clientId     = formData.get('client_id') as string
+  const clientName   = (formData.get('client_name') as string)?.trim() || ''
   const assignedTo   = formData.get('assigned_to') as string
   const amount       = parseFloat(formData.get('amount') as string) || 0
   const advancePayment = parseFloat(formData.get('advance_payment') as string) || 0
@@ -255,13 +255,37 @@ export async function createProject(formData: FormData) {
   const client = await clientPromise
   const db = client.db()
 
+  let clientId = null
+  if (clientName) {
+    const clientDoc = await db.collection('clients').findOne({
+      name: { $regex: new RegExp(`^${clientName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, 'i') }
+    })
+    if (clientDoc) {
+      clientId = clientDoc.id
+    } else {
+      clientId = `client-${Math.random().toString(36).substring(2, 9)}`
+      await db.collection('clients').insertOne({
+        id: clientId,
+        user_id: user.id,
+        name: clientName,
+        email: null,
+        phone: null,
+        whatsapp: null,
+        company: null,
+        address: null,
+        notes: 'Automatically created from project creation',
+        created_at: new Date().toISOString()
+      })
+    }
+  }
+
   const newId = `proj-${Math.random().toString(36).substring(2, 9)}`
   const newProject = {
     id: newId,
     user_id: user.id,
     assigned_to: (assignedTo && assignedTo !== 'none') ? assignedTo : null,
     title, description, category,
-    client_id: (clientId && clientId !== 'none') ? clientId : null,
+    client_id: clientId,
     amount, advance_payment: advancePayment,
     deadline: deadline || null,
     priority, status, slug,
@@ -299,7 +323,7 @@ export async function updateProject(id: string, formData: FormData) {
   const title        = formData.get('title') as string
   const description  = formData.get('description') as string
   const category     = formData.get('category') as string
-  const clientId     = formData.get('client_id') as string
+  const clientName   = (formData.get('client_name') as string)?.trim() || ''
   const assignedTo   = formData.get('assigned_to') as string
   const amount       = parseFloat(formData.get('amount') as string) || 0
   const advancePayment = parseFloat(formData.get('advance_payment') as string) || 0
@@ -312,13 +336,37 @@ export async function updateProject(id: string, formData: FormData) {
   const client = await clientPromise
   const db = client.db()
 
+  let clientId = null
+  if (clientName) {
+    const clientDoc = await db.collection('clients').findOne({
+      name: { $regex: new RegExp(`^${clientName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, 'i') }
+    })
+    if (clientDoc) {
+      clientId = clientDoc.id
+    } else {
+      clientId = `client-${Math.random().toString(36).substring(2, 9)}`
+      await db.collection('clients').insertOne({
+        id: clientId,
+        user_id: user.id,
+        name: clientName,
+        email: null,
+        phone: null,
+        whatsapp: null,
+        company: null,
+        address: null,
+        notes: 'Automatically created from project update',
+        created_at: new Date().toISOString()
+      })
+    }
+  }
+
   const query = user.role === 'manager' ? { id } : { id, user_id: user.id }
 
   await db.collection('projects').updateOne(
     query,
     { $set: {
         title, description, category,
-        client_id: (clientId && clientId !== 'none') ? clientId : null,
+        client_id: clientId,
         assigned_to: (assignedTo && assignedTo !== 'none') ? assignedTo : null,
         amount, advance_payment: advancePayment,
         deadline: deadline || null,
