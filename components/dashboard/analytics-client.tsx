@@ -712,6 +712,48 @@ export function AnalyticsClient({
               </CardContent>
             </Card>
 
+            {/* Project Name Revenue List Table */}
+            <Card className="border-0 shadow-md bg-card/60 backdrop-blur-md col-span-2">
+              <CardHeader>
+                <CardTitle>Aggregated Revenue by Project Name</CardTitle>
+                <CardDescription>Full ranked list of project titles with combined revenues and occurrences</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border bg-background/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Rank</TableHead>
+                        <TableHead>Project Title</TableHead>
+                        <TableHead className="text-center font-medium">Project Count</TableHead>
+                        <TableHead className="text-right font-medium">Combined Revenue</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projectNameRevenueData.length > 0 ? (
+                        projectNameRevenueData.map((item, index) => (
+                          <TableRow key={item.name}>
+                            <TableCell className="font-semibold text-muted-foreground">#{index + 1}</TableCell>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell className="text-center">{item.count}</TableCell>
+                            <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
+                              ₹{item.revenue.toLocaleString('en-IN')}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
+                            No project data available
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Projects Detail Table */}
             <Card className="border-0 shadow-md bg-card/60 backdrop-blur-md col-span-2">
               <CardHeader>
