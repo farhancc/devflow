@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, FolderKanban } from 'lucide-react'
-import { ProjectsTable } from '@/components/dashboard/projects-table'
+import { ProjectsTabs } from '@/components/dashboard/projects-tabs'
 import { getLocalProjects, getLocalClients } from '@/lib/local-db'
 
 const statusColors: Record<string, string> = {
@@ -101,7 +101,7 @@ export default async function ProjectsPage() {
 
       {/* Projects List */}
       {projects.length > 0 ? (
-        <ProjectsTable 
+        <ProjectsTabs 
           projects={projects} 
           clients={clients}
           statusColors={statusColors} 

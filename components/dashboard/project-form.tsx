@@ -80,7 +80,7 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
   const [localCategories, setLocalCategories] = useState<{ value: string; label: string }[]>(
     categoriesProp || defaultCategories
   )
-  const [selectedCategory, setSelectedCategory] = useState(project?.category || 'ui_ux')
+  const [selectedCategory, setSelectedCategory] = useState(project?.category || 'custom')
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isAddingCategory, setIsAddingCategory] = useState(false)
@@ -267,7 +267,7 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select name="status" defaultValue={project?.status || 'inquiry'}>
+              <Select name="status" defaultValue={project?.status || 'in_progress'}>
                 <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
                 <SelectContent>
                   {statuses.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
