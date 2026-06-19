@@ -128,6 +128,25 @@ export function AnalyticsClient({
   // Colors for charts
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#06b6d4']
 
+  const projectNameRevenueData = React.useMemo(() => {
+    if (!projectStats?.list) return []
+    const groups: Record<string, { name: string; revenue: number; count: number }> = {}
+    projectStats.list.forEach(p => {
+      const trimmedName = p.title?.trim() || 'Untitled Project'
+      const key = trimmedName.toLowerCase()
+      if (!groups[key]) {
+        groups[key] = {
+          name: trimmedName,
+          revenue: 0,
+          count: 0
+        }
+      }
+      groups[key].revenue += Number(p.amount) || 0
+      groups[key].count += 1
+    })
+    return Object.values(groups).sort((a, b) => b.revenue - a.revenue)
+  }, [projectStats?.list])
+
   const statusLabels: Record<string, string> = {
     inquiry: 'Inquiry',
     in_progress: 'In Progress',
@@ -639,6 +658,56 @@ export function AnalyticsClient({
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No category data available</div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Project Name Revenue Distribution */}
+            <Card className="border-0 shadow-md bg-card/60 backdrop-blur-md col-span-2">
+              <CardHeader>
+                <CardTitle>Revenue by Project Name</CardTitle>
+                <CardDescription>Total combined revenue aggregated by unique project titles (Top 8)</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[350px] pt-4">
+                {projectNameRevenueData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={projectNameRevenueData.slice(0, 8)} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                      <defs>
+                        <linearGradient id="colorProjNameRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.85}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0.4}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="#888888" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        axisLine={false}
+                        angle={-15}
+                        textAnchor="end"
+                      />
+                      <YAxis 
+                        stroke="#888888" 
+                        fontSize={12} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickFormatter={(v) => `₹${v / 1000}k`} 
+                      />
+                      <Tooltip 
+                        formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue']}
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="revenue" fill="url(#colorProjNameRevenue)" radius={[4, 4, 0, 0]}>
+                        {projectNameRevenueData.slice(0, 8).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No project name data available</div>
                 )}
               </CardContent>
             </Card>
