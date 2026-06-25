@@ -526,3 +526,39 @@ export async function addProjectCategory(label: string) {
   const { _id, ...plainCategory } = newCategory as any
   return { data: plainCategory }
 }
+
+export async function recordProjectPayment(projectId: string, amount: number, notes?: string) {
+  const currentUser = await getCurrentUser()
+  if (!currentUser) return { error: 'Unauthorized' }
+
+  const clientDb = await clientPromise
+  const db = clientDb.db()
+
+  const currentProject = await db.collection('projects').findOne(
+    currentUser.role === 'manager' 
+      ? { id: projectId } 
+      : { id: projectId, $or: [{ user_id: currentUser.id }, { assigned_to: currentUser.id }] }
+  )
+  if (!currentProject) return { error: 'Project not found' }
+
+  if (isNaN(amount) || amount <= 0) return { error: 'Invalid amount' }
+
+  const payId = `pay-${Math.random().toString(36).substring(2, 9)}`
+  await db.collection('payments').insertOne({
+    id: payId,
+    user_id: currentUser.id,
+    employee_id: currentProject.assigned_to || null,
+    project_id: projectId,
+    client_id: currentProject.client_id || null,
+    amount: amount,
+    payment_date: new Date().toISOString().split('T')[0],
+    status: 'paid',
+    notes: notes || `Payment for ${currentProject.title}`,
+    created_at: new Date().toISOString()
+  })
+
+  revalidatePath(`/dashboard/projects/${projectId}`)
+  revalidatePath('/dashboard/projects')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
