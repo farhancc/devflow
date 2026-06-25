@@ -58,12 +58,12 @@ interface Project {
   amount: number
   deadline: string | null
   created_at: string
-  clients: { id: string; name: string } | null
+  clients: { id: string; name: string; whatsapp?: string | null } | null
 }
 
 interface ProjectsTableProps {
   projects: Project[]
-  clients: { id: string; name: string }[]
+  clients: { id: string; name: string; whatsapp?: string | null }[]
   statusColors: Record<string, string>
 }
 
@@ -183,7 +183,21 @@ export function ProjectsTable({ projects, statusColors }: ProjectsTableProps) {
                   </Link>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-muted-foreground">
-                  {project.clients?.name || '-'}
+                  {project.clients?.name ? (
+                    project.clients.whatsapp ? (
+                      <a
+                        href={`https://wa.me/${project.clients.whatsapp.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-green-500 hover:underline transition-colors cursor-pointer"
+                        title={`Chat with ${project.clients.name} on WhatsApp`}
+                      >
+                        {project.clients.name}
+                      </a>
+                    ) : (
+                      <span>{project.clients.name}</span>
+                    )
+                  ) : '-'}
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground">
                   {categoryLabels[project.category] || project.category}

@@ -17,7 +17,7 @@ import { useToast } from '@/components/ui/use-toast'
 
 interface Employee { id: string; fullName: string; username: string }
 interface ProjectFormProps {
-  clients: { id: string; name: string }[]
+  clients: { id: string; name: string; whatsapp?: string | null }[]
   employees?: Employee[]
   isManager?: boolean
   categories?: { value: string; label: string }[]
@@ -235,6 +235,17 @@ export function ProjectForm({ clients, employees = [], isManager = false, projec
                 </datalist>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="client_whatsapp">Client WhatsApp Number</Label>
+            <Input
+              id="client_whatsapp"
+              name="client_whatsapp"
+              type="tel"
+              defaultValue={project?.client_id ? clients.find(c => c.id === project.client_id)?.whatsapp || '' : ''}
+              placeholder="e.g., 919876543210 (include country code without + or spaces)"
+            />
           </div>
 
           {/* Assign to Employee — Manager only */}

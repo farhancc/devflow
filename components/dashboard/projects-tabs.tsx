@@ -13,12 +13,12 @@ interface Project {
   amount: number
   deadline: string | null
   created_at: string
-  clients: { id: string; name: string } | null
+  clients: { id: string; name: string; whatsapp?: string | null } | null
 }
 
 interface ProjectsTabsProps {
   projects: Project[]
-  clients: { id: string; name: string }[]
+  clients: { id: string; name: string; whatsapp?: string | null }[]
   statusColors: Record<string, string>
 }
 

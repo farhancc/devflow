@@ -242,6 +242,7 @@ export async function createProject(formData: FormData) {
   const description  = formData.get('description') as string
   const category     = formData.get('category') as string
   const clientName   = (formData.get('client_name') as string)?.trim() || ''
+  const clientWhatsapp = (formData.get('client_whatsapp') as string)?.trim() || ''
   const assignedTo   = formData.get('assigned_to') as string
   const amount       = parseFloat(formData.get('amount') as string) || 0
   const advancePayment = parseFloat(formData.get('advance_payment') as string) || 0
@@ -262,6 +263,12 @@ export async function createProject(formData: FormData) {
     })
     if (clientDoc) {
       clientId = clientDoc.id
+      if (clientWhatsapp && clientDoc.whatsapp !== clientWhatsapp) {
+        await db.collection('clients').updateOne(
+          { id: clientId },
+          { $set: { whatsapp: clientWhatsapp } }
+        )
+      }
     } else {
       clientId = `client-${Math.random().toString(36).substring(2, 9)}`
       await db.collection('clients').insertOne({
@@ -270,7 +277,7 @@ export async function createProject(formData: FormData) {
         name: clientName,
         email: null,
         phone: null,
-        whatsapp: null,
+        whatsapp: clientWhatsapp || null,
         company: null,
         address: null,
         notes: 'Automatically created from project creation',
@@ -324,6 +331,7 @@ export async function updateProject(id: string, formData: FormData) {
   const description  = formData.get('description') as string
   const category     = formData.get('category') as string
   const clientName   = (formData.get('client_name') as string)?.trim() || ''
+  const clientWhatsapp = (formData.get('client_whatsapp') as string)?.trim() || ''
   const assignedTo   = formData.get('assigned_to') as string
   const amount       = parseFloat(formData.get('amount') as string) || 0
   const advancePayment = parseFloat(formData.get('advance_payment') as string) || 0
@@ -343,6 +351,12 @@ export async function updateProject(id: string, formData: FormData) {
     })
     if (clientDoc) {
       clientId = clientDoc.id
+      if (clientWhatsapp && clientDoc.whatsapp !== clientWhatsapp) {
+        await db.collection('clients').updateOne(
+          { id: clientId },
+          { $set: { whatsapp: clientWhatsapp } }
+        )
+      }
     } else {
       clientId = `client-${Math.random().toString(36).substring(2, 9)}`
       await db.collection('clients').insertOne({
@@ -351,7 +365,7 @@ export async function updateProject(id: string, formData: FormData) {
         name: clientName,
         email: null,
         phone: null,
-        whatsapp: null,
+        whatsapp: clientWhatsapp || null,
         company: null,
         address: null,
         notes: 'Automatically created from project update',

@@ -6,6 +6,7 @@ export interface Client {
   name: string;
   email: string;
   phone: string;
+  whatsapp?: string | null;
   company: string;
   created_at: string;
 }

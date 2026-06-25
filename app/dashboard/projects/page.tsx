@@ -32,11 +32,11 @@ export default async function ProjectsPage() {
     const client = rawClients.find(c => c.id === p.client_id)
     return {
       ...p,
-      clients: client ? { id: client.id, name: client.name } : null
+      clients: client ? { id: client.id, name: client.name, whatsapp: client.whatsapp } : null
     }
   })
 
-  const clients = rawClients.map(c => ({ id: c.id, name: c.name }))
+  const clients = rawClients.map(c => ({ id: c.id, name: c.name, whatsapp: c.whatsapp }))
 
   // Calculate stats
   const stats = {
