@@ -2,15 +2,11 @@ import { getCurrentUser } from '@/lib/auth'
 import { getLocalProjects, getLocalClients, getLocalPayments, getLocalExpenses } from '@/lib/local-db'
 import { getUsers } from '@/lib/db'
 import { AnalyticsClient } from '@/components/dashboard/analytics-client'
-import { syncAllProjectsPayments } from '@/app/dashboard/projects/actions'
 
 export default async function AnalyticsPage() {
   const user = await getCurrentUser()
 
   if (!user) return null
-
-  // Ensure all projects are synced to payments in the background (non-blocking)
-  syncAllProjectsPayments().catch(err => console.error('Failed to sync projects/payments:', err))
 
   // Fetch local data (automatically scoped to user role by getLocal* functions, passing user.role to avoid redundant user role lookups in MongoDB)
   const [projects, clients, payments, expenses] = await Promise.all([

@@ -1,7 +1,12 @@
 import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
-const options = {};
+const options = {
+  maxPoolSize: 10,             // Limit the number of connections in the pool
+  minPoolSize: 1,              // Maintain at least 1 connection
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of hanging
+  socketTimeoutMS: 45000,      // Close inactive sockets
+};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;

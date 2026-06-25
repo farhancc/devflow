@@ -27,7 +27,6 @@ import {
   getLocalGoals
 } from '@/lib/local-db'
 import { getTeamOverview } from '@/app/dashboard/settings/actions'
-import { syncAllProjectsPayments } from '@/app/dashboard/projects/actions'
 
 const statusColors: Record<string, string> = {
   inquiry: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -42,15 +41,14 @@ export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) return null
 
-  // Ensure all projects are synced to payments in the background (non-blocking)
-  syncAllProjectsPayments().catch(err => console.error('Failed to sync projects/payments:', err))
-
-  // Per-user data (passing user.role to avoid redundant user role lookups in MongoDB)
-  const projects = await getLocalProjects(user.id, user.role)
-  const clients = await getLocalClients(user.id, user.role)
-  const payments = await getLocalPayments(user.id, user.role)
-  const expenses = await getLocalExpenses(user.id, user.role)
-  const goals = await getLocalGoals(user.id, user.role)
+  // Fetch all per-user data concurrently using Promise.all (passing user.role to avoid redundant user role lookups in MongoDB)
+  const [projects, clients, payments, expenses, goals] = await Promise.all([
+    getLocalProjects(user.id, user.role),
+    getLocalClients(user.id, user.role),
+    getLocalPayments(user.id, user.role),
+    getLocalExpenses(user.id, user.role),
+    getLocalGoals(user.id, user.role)
+  ])
 
   const activeProjectsList = projects.filter(p =>
     ['in_progress', 'revision', 'inquiry'].includes(p.status)
